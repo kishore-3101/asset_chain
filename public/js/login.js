@@ -49,3 +49,46 @@ alert("Server error. Please try again.");
 }
 
 }
+
+//student login
+function studentLogin(){
+
+const email = document.getElementById("student_email").value;
+const password = document.getElementById("student_password").value;
+
+fetch("/api/student/login",{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+email:email,
+password:password
+})
+})
+.then(res=>res.json())
+.then(data=>{
+
+console.log(data); // debug
+
+if(data.success){
+
+/* SAVE STUDENT DATA */
+
+localStorage.setItem("student", JSON.stringify(data.student));
+
+window.location.href="student_dashboard.html";
+
+}else{
+
+alert(data.message);
+
+}
+
+})
+.catch(err=>{
+console.error(err);
+alert("Server error");
+});
+
+}

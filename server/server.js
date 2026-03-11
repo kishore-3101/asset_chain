@@ -1,87 +1,90 @@
 const express = require("express");
 const path = require("path");
 const cors = require("cors");
+const http = require("http");
+const { Server } = require("socket.io");
 
 const app = express();
 
-/* ===============================
+/* =================================
    MIDDLEWARE
-================================*/
+================================= */
 
 app.use(cors());
-
 app.use(express.json());
-
 app.use(express.urlencoded({ extended: true }));
 
-
-/* ===============================
+/* =================================
    STATIC FILES
-================================*/
-
-/* frontend */
+================================= */
 
 app.use(express.static(path.join(__dirname, "../public")));
-
-/* uploaded invoices */
-
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
-
-/* ===============================
+/* =================================
    ROUTES IMPORT
-================================*/
+================================= */
 
 const authRoutes = require("./routes/auth");
-
 const labRoutes = require("./routes/labs");
-
 const inchargeRoutes = require("./routes/incharge");
-
 const equipmentRoutes = require("./routes/equipment");
-
 const requestRoutes = require("./routes/requests");
+const notificationRoutes = require("./routes/notifications");
 
+const studentAuth = require("./routes/studentAuth");
+const studentRequests = require("./routes/studentRequests");
+const labEquipment = require("./routes/labEquipment");
 
-/* ===============================
+/* =================================
    API ROUTES
-================================*/
+================================= */
 
 app.use("/api/auth", authRoutes);
-
 app.use("/api/labs", labRoutes);
-
 app.use("/api/incharge", inchargeRoutes);
-
 app.use("/api/equipment", equipmentRoutes);
-
 app.use("/api/requests", requestRoutes);
+app.use("/api/notifications", notificationRoutes);
 
+/* STUDENT ROUTES */
 
-/* ===============================
-   DEFAULT ROUTE
-================================*/
+app.use("/api/student", studentAuth);
+app.use("/api/student", studentRequests);
 
-app.get("/", (req, res) => {
+/* LAB EQUIPMENT */
 
-res.sendFile(path.join(__dirname, "../public/login.html"));
+app.use("/api/lab_equipment", labEquipment);
+
+/* =================================
+   QR REDIRECT ROUTE
+================================= */
+
+app.get("/incharge/request/:id", (req, res) => {
+
+const requestId = req.params.id;
+
+res.redirect(`/incharge_request.html?id=${requestId}`);
 
 });
 
+/* =================================
+   DEFAULT ROUTE
+================================= */
 
-/*==============================
-      NOTIFICATION ROUTE
-===============================*/
-const notificationRoutes = require("./routes/notifications");
+app.get("/", (req, res) => {
+res.sendFile(path.join(__dirname, "../public/login.html"));
+});
 
-app.use("/api/notifications",notificationRoutes);
-//remainder route
+/* =================================
+   CRON JOBS
+================================= */
+
 require("./utils/remainder");
 
-//for incharge
-
-const http = require("http");
-const { Server } = require("socket.io");
+/* =================================
+   SOCKET.IO SETUP
+================================= */
 
 const server = http.createServer(app);
 
@@ -98,20 +101,17 @@ io.on("connection",(socket)=>{
 console.log("User connected:",socket.id);
 
 socket.on("disconnect",()=>{
-console.log("User disconnected");
+console.log("User disconnected:",socket.id);
 });
 
 });
 
-
-/* ===============================
+/* =================================
    SERVER START
-================================*/
+================================= */
 
 const PORT = 3000;
 
-app.listen(PORT, () => {
-
+server.listen(PORT, () => {
 console.log(`🚀 Server running at http://localhost:${PORT}`);
-
 });

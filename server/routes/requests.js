@@ -376,5 +376,74 @@ message:"Order marked successfully"
 
 });
 
+//view requests
+
+router.get("/request/:id",(req,res)=>{
+
+const requestId = req.params.id;
+
+const sql = `
+SELECT 
+borrow_requests.id,
+borrow_requests.status,
+students.name,
+students.email,
+students.department,
+students.contact_number
+
+FROM borrow_requests
+
+JOIN students
+ON borrow_requests.student_id = students.id
+
+WHERE borrow_requests.id = ?
+`;
+
+db.query(sql,[requestId],(err,result)=>{
+
+if(err){
+console.log(err);
+return res.status(500).json({success:false});
+}
+
+if(result.length===0){
+return res.json({success:false});
+}
+
+const student = result[0];
+
+const itemsSql = `
+SELECT 
+request_items.equipment_id,
+request_items.quantity,
+equipment.equipment_name
+
+FROM request_items
+
+JOIN equipment
+ON request_items.equipment_id = equipment.id
+
+WHERE request_items.request_id = ?
+`;
+
+db.query(itemsSql,[requestId],(err2,items)=>{
+
+if(err2){
+console.log(err2);
+return res.status(500).json({success:false});
+}
+
+res.json({
+success:true,
+student,
+items
+});
+
+});
+
+});
+
+});
+
 
 module.exports = router;
