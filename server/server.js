@@ -106,6 +106,26 @@ console.log("User disconnected:",socket.id);
 
 });
 
+app.get("/return/:id",(req,res)=>{
+
+const requestId = req.params.id;
+
+res.redirect(`/return_request.html?id=${requestId}`);
+
+});
+
+//return route
+
+app.get("/return/:id",(req,res)=>{
+res.sendFile(path.join(__dirname,"../public/return_request.html"));
+});
+
+//export data route
+
+const reportRoutes = require("./routes/reports");
+
+app.use("/api/reports", reportRoutes);
+
 /* =================================
    SERVER START
 ================================= */

@@ -1,3 +1,7 @@
+/* ===============================
+   LOAD LAB INFORMATION
+================================*/
+
 async function loadLab(){
 
 const userId = localStorage.getItem("user_id");
@@ -10,32 +14,38 @@ return;
 try{
 
 const res = await fetch(`/api/incharge/lab/${userId}`);
-
 const data = await res.json();
 
-if(data.lab_name){
+if(data.success && data.lab){
 
-document.getElementById("lab_title").innerText =
-data.lab_name + " Dashboard";
+localStorage.setItem("lab_id", data.lab.lab_id);
 
-localStorage.setItem("lab_id", data.lab_id);
+const title = document.getElementById("lab_title");
 
-console.log("Lab ID:", data.lab_id);
-
-}
-else{
-document.getElementById("lab_title").innerText = "Lab Dashboard";
+if(title){
+title.innerText = data.lab.lab_name + " Dashboard";
 }
 
+console.log("Lab ID:", data.lab.lab_id);
+
+}else{
+
+console.log("Lab not found");
+
 }
-catch(err){
+
+}catch(err){
+
 console.error("Error loading lab:", err);
-}
 
 }
 
-window.onload = loadLab;
+}
 
+
+/* ===============================
+   NAVIGATION FUNCTIONS
+================================*/
 
 function openAddEquipment(){
 window.location.href = "add_equipment.html";
@@ -57,20 +67,32 @@ function openPurchaseRequest(){
 window.location.href = "equipment_request.html";
 }
 
+function openNotifications(){
+window.location.href = "notifications.html";
+}
+
+
+/* ===============================
+   LOGOUT
+================================*/
+
 function logout(){
 
 const confirmLogout = confirm("Are you sure you want to logout?");
 
 if(confirmLogout){
+
 localStorage.clear();
 window.location.href = "login.html";
-}
 
 }
 
-function openNotifications(){
-window.location.href = "notifications.html";
 }
+
+
+/* ===============================
+   NOTIFICATION COUNT
+================================*/
 
 async function loadNotificationCount(){
 
@@ -105,31 +127,14 @@ console.error("Notification count error:",err);
 
 }
 
-window.onload = function(){
+
+/* ===============================
+   PAGE INITIALIZATION
+================================*/
+
+document.addEventListener("DOMContentLoaded", ()=>{
 
 loadLab();
 loadNotificationCount();
-
-};
-
-
-const socket = io();
-
-socket.on("new_notification",(data)=>{
-
-const user_id = localStorage.getItem("user_id");
-const role = localStorage.getItem("role");
-
-/* only update if notification belongs to this user */
-
-if(data.receiver_id == user_id && data.role == role){
-
-loadNotificationCount();
-
-/* optional alert */
-
-console.log("New notification received");
-
-}
 
 });

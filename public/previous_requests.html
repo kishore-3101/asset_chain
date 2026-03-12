@@ -8,7 +8,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 
 <style>
@@ -108,7 +107,7 @@ border-radius:6px;
 font-size:13px;
 }
 
-/* Button */
+/* Buttons */
 
 .qr-btn{
 background:linear-gradient(135deg,#6366f1,#4f46e5);
@@ -116,9 +115,19 @@ border:none;
 color:white;
 padding:6px 14px;
 border-radius:8px;
+margin-right:5px;
 }
 
-.qr-btn:hover{
+.return-btn{
+background:#f59e0b;
+border:none;
+color:white;
+padding:6px 14px;
+border-radius:8px;
+}
+
+.qr-btn:hover,
+.return-btn:hover{
 opacity:0.9;
 }
 
@@ -145,6 +154,7 @@ opacity:0.9;
 
 </div>
 
+
 <!-- Main -->
 
 <div class="main">
@@ -169,7 +179,10 @@ opacity:0.9;
 <th>ID</th>
 <th>Status</th>
 <th>Date</th>
-<th>QR</th>
+<th>Request Details</th>
+<th>Borrowed Details</th>
+<th>Pickup QR</th>
+<th>Return QR</th>
 </tr>
 
 </thead>
@@ -187,15 +200,12 @@ opacity:0.9;
 /* Logout */
 
 function logout(){
-
 if(confirm("Are you sure you want to logout?")){
-
 localStorage.clear();
 window.location.href="login.html";
-
+}
 }
 
-}
 
 /* Load Requests */
 
@@ -205,17 +215,30 @@ fetch(`/api/student/my-requests/${student.id}`)
 .then(res=>res.json())
 .then(data=>{
 
-const table = document.getElementById("reqTable");
+const table=document.getElementById("reqTable");
+table.innerHTML="";
+
+if(data.requests.length===0){
+
+table.innerHTML=`
+<tr>
+<td colspan="7" class="text-center">No requests found</td>
+</tr>
+`;
+
+return;
+
+}
 
 data.requests.forEach(r=>{
 
-let statusClass = "";
+let statusClass="";
 
-if(r.status === "pending") statusClass="status-pending";
-if(r.status === "approved") statusClass="status-approved";
-if(r.status === "rejected") statusClass="status-rejected";
+if(r.status==="pending") statusClass="status-pending";
+if(r.status==="approved") statusClass="status-approved";
+if(r.status==="rejected") statusClass="status-rejected";
 
-table.innerHTML += `
+table.innerHTML+=`
 
 <tr>
 
@@ -229,11 +252,31 @@ ${r.status}
 
 <td>${new Date(r.created_at).toLocaleString()}</td>
 
+<td id="request-${r.id}">
+Loading...
+</td>
+
+<td id="borrowed-${r.id}">
+Loading...
+</td>
+
 <td>
 
-<button class="qr-btn" onclick="openQR(${r.id})">
-Show QR
+<button class="qr-btn"
+onclick="openPickupQR(${r.id})">
+Pickup QR
 </button>
+
+</td>
+
+<td>
+
+${r.status==="approved" ? `
+<button class="return-btn"
+onclick="openReturnQR(${r.id})">
+Return QR
+</button>
+` : "-"}
 
 </td>
 
@@ -241,17 +284,61 @@ Show QR
 
 `;
 
+/* Load Request Details */
+
+fetch(`/api/student/request-details/${r.id}`)
+.then(res=>res.json())
+.then(d=>{
+
+let html=`<b>${r.lab_name}</b><br>`;
+
+d.items.forEach(item=>{
+html+=`${item.equipment_name} - ${item.quantity}<br>`;
+});
+
+document.getElementById(`request-${r.id}`).innerHTML=html;
+
+});
+
+
+/* Load Borrowed Details */
+
+fetch(`/api/student/borrowed-details/${r.id}`)
+.then(res=>res.json())
+.then(d=>{
+
+let html="";
+
+if(d.items.length===0){
+html="-";
+}else{
+
+d.items.forEach(item=>{
+html+=`${item.equipment_name} - ${item.issued_quantity}<br>`;
+});
+
+}
+
+document.getElementById(`borrowed-${r.id}`).innerHTML=html;
+
 });
 
 });
 
+});
 
-/* Open QR */
 
-function openQR(id){
+/* Pickup QR */
 
-window.location.href = `request_qr.html?id=${id}`;
+function openPickupQR(id){
+window.location.href=`request_qr.html?id=${id}`;
+}
 
+
+/* Return QR */
+
+function openReturnQR(id){
+window.location.href=`return_qr.html?id=${id}`;
 }
 
 </script>

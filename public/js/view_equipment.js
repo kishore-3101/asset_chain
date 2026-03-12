@@ -1,9 +1,24 @@
+/* ===============================
+   LOAD EQUIPMENT STATUS
+================================*/
+
 async function loadEquipmentStatus(){
 
 const lab_id = localStorage.getItem("lab_id");
 
-const res = await fetch(`/api/equipment/status/${lab_id}`);
+/* wait until lab id is ready */
 
+if(!lab_id){
+
+console.log("Waiting for lab_id...");
+setTimeout(loadEquipmentStatus,500);
+return;
+
+}
+
+try{
+
+const res = await fetch(`/api/equipment/status/${lab_id}`);
 const data = await res.json();
 
 let rows = "";
@@ -17,9 +32,9 @@ rows += `
 <td>${e.total_quantity}</td>
 <td>${e.available_quantity}</td>
 <td>${e.issued_quantity}</td>
-<td>${e.light_damage}</td>
-<td>${e.medium_damage}</td>
-<td>${e.heavy_damage}</td>
+<td class="text-warning">${e.light_damage}</td>
+<td class="text-danger">${e.medium_damage}</td>
+<td class="text-dark">${e.heavy_damage}</td>
 </tr>
 `;
 
@@ -27,6 +42,21 @@ rows += `
 
 document.getElementById("equipment_status").innerHTML = rows;
 
+}catch(err){
+
+console.error("Error loading equipment status:",err);
+
 }
 
-window.onload = loadEquipmentStatus;
+}
+
+
+/* ===============================
+   PAGE LOAD
+================================*/
+
+document.addEventListener("DOMContentLoaded", ()=>{
+
+loadEquipmentStatus();
+
+});

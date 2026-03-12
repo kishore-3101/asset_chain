@@ -166,6 +166,11 @@ margin-bottom:15px;
 background:linear-gradient(135deg,#ff0000,#023a48);
 }
 
+.card-system.penalty{
+background:linear-gradient(135deg,#0d29a5,#43390a);
+}
+
+
 #assetchain{
     color: #008cff;
 }
@@ -259,6 +264,13 @@ Logout
 </div>
 
 <div class="col-lg-3 col-md-6">
+<div class="card-system penalty" onclick="openPenalties()">
+<h4>Penalty Collection</h4>
+<p>Collect student penalties</p>
+</div>
+</div>
+
+<div class="col-lg-3 col-md-6">
 <div class="card-system purchase" onclick="openPurchaseRequest()">
 <h4>Equipment Request</h4>
 <p>Request new equipment</p>
@@ -272,6 +284,11 @@ Logout
 </div>
 <script src="/socket.io/socket.io.js"></script>
 <script src="/js/incharge.js"></script>
+<script>
+    function openPenalties(){
+window.location.href="incharge_penalties.html";
+}
+</script>
 
 </body>
 

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Borrowed Students</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+
+body{
+background:#eef2f7;
+font-family:'Poppins',sans-serif;
+margin:0;
+}
+
+/* Sidebar */
+
+.sidebar{
+position:fixed;
+left:0;
+top:0;
+width:230px;
+height:100%;
+background:#0f172a;
+color:white;
+padding-top:20px;
+}
+
+.sidebar h4{
+text-align:center;
+margin-bottom:30px;
+}
+
+.sidebar a{
+display:block;
+padding:12px 20px;
+color:white;
+text-decoration:none;
+}
+
+.sidebar a:hover{
+background:#1e293b;
+}
+
+/* Main */
+
+.main{
+margin-left:230px;
+padding:40px;
+}
+
+/* Table Card */
+
+.table-card{
+background:white;
+border-radius:12px;
+box-shadow:0 6px 18px rgba(0,0,0,0.08);
+padding:20px;
+}
+
+/* Table styling */
+
+.table{
+border-radius:10px;
+overflow:hidden;
+}
+
+.table th{
+text-align:center;
+}
+
+.table td{
+text-align:center;
+vertical-align:middle;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<!-- Sidebar -->
+
+<div class="sidebar">
+
+<h4>CIT Assets</h4>
+
+<a href="incharge_dashboard.html">Dashboard</a>
+<a href="student_requests.html">Student Requests</a>
+<a href="borrowed_items.html">Borrowed Items</a>
+
+</div>
+
+
+<!-- Main -->
+
+<div class="main">
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+
+<h2 class="fw-bold">Borrowed Students</h2>
+
+<a href="incharge_dashboard.html" class="btn btn-secondary">
+← Back
+</a>
+
+</div>
+
+<div class="table-card">
+
+<div class="table-responsive">
+
+<table class="table">
+
+<thead class="table-dark">
+
+<tr>
+<th>Request ID</th>
+<th>Student Name</th>
+<th>Date</th>
+<th>Action</th>
+</tr>
+
+</thead>
+
+<tbody id="table"></tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</div>
+
+
+<script>
+
+const inchargeId = localStorage.getItem("user_id");
+
+fetch(`/api/incharge/borrowed-students/${inchargeId}`)
+.then(res=>res.json())
+.then(data=>{
+
+const table = document.getElementById("table");
+
+table.innerHTML="";
+
+if(!data.success || data.students.length===0){
+
+table.innerHTML = `
+<tr>
+<td colspan="4">No borrowed items</td>
+</tr>
+`;
+
+return;
+}
+
+data.students.forEach(s=>{
+
+table.innerHTML += `
+<tr>
+
+<td>${s.request_id}</td>
+
+<td>${s.student_name}</td>
+
+<td>${new Date(s.created_at).toLocaleDateString()}</td>
+
+<td>
+
+<a href="borrowed_details.html?id=${s.request_id}" 
+class="btn btn-primary btn-sm">
+
+View
+
+</a>
+
+</td>
+
+</tr>
+`;
+
+});
+
+});
+
+</script>
+
+</body>
+
+</html>

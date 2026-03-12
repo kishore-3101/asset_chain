@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Student Notifications</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+
+body{
+font-family:'Poppins',sans-serif;
+background:#f4f6f9;
+margin:0;
+}
+
+/* Sidebar */
+
+.sidebar{
+position:fixed;
+left:0;
+top:0;
+width:230px;
+height:100%;
+background:#111827;
+color:white;
+padding-top:20px;
+}
+
+.sidebar h4{
+text-align:center;
+margin-bottom:30px;
+}
+
+.sidebar a{
+display:block;
+color:white;
+padding:12px 20px;
+text-decoration:none;
+transition:0.3s;
+}
+
+.sidebar a:hover{
+background:#374151;
+}
+
+/* Main */
+
+.main{
+margin-left:230px;
+padding:40px;
+}
+
+/* Notification Card */
+
+.notification-card{
+
+background:white;
+border-radius:10px;
+padding:15px;
+margin-bottom:12px;
+box-shadow:0 2px 10px rgba(0,0,0,0.1);
+cursor:pointer;
+transition:0.2s;
+
+}
+
+.notification-card:hover{
+transform:translateY(-2px);
+box-shadow:0 4px 15px rgba(0,0,0,0.15);
+}
+
+/* Unread Notification */
+
+.notification-new{
+background:#eef2ff;
+border-left:4px solid #6366f1;
+}
+
+/* Time */
+
+.notification-time{
+font-size:12px;
+color:#6b7280;
+margin-top:5px;
+}
+
+/* NEW badge */
+
+.new-badge{
+background:red;
+color:white;
+padding:2px 8px;
+border-radius:10px;
+font-size:11px;
+margin-left:10px;
+}
+
+/* Logout */
+
+.logout{
+position:absolute;
+bottom:20px;
+width:100%;
+}
+
+.logout-btn{
+display:block;
+margin:10px 20px;
+padding:10px;
+text-align:center;
+background:#ef4444;
+color:white;
+border-radius:8px;
+font-weight:500;
+text-decoration:none;
+}
+
+.logout-btn:hover{
+background:#dc2626;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<!-- Sidebar -->
+
+<div class="sidebar">
+
+<h4>CIT Assets</h4>
+
+<a href="student_dashboard.html">Dashboard</a>
+<a href="student_equipment.html">Lab Equipment</a>
+<a href="#">Transport</a>
+<a href="#">Library Assets</a>
+<a href="student_notifications.html">🔔 Notifications</a>
+
+<div class="logout">
+<a href="#" class="logout-btn" onclick="logout()">Logout</a>
+</div>
+
+</div>
+
+
+<!-- Main -->
+
+<div class="main">
+
+<h3>Notifications</h3>
+
+<div id="notificationList"></div>
+
+</div>
+
+
+<script>
+
+/* logout */
+
+function logout(){
+
+localStorage.removeItem("student");
+window.location.href="login.html";
+
+}
+
+
+/* load notifications */
+
+function loadNotifications(){
+
+const student = JSON.parse(localStorage.getItem("student"));
+
+if(!student) return;
+
+fetch(`/api/notifications/${student.id}/student`)
+.then(res=>res.json())
+.then(data=>{
+
+const container = document.getElementById("notificationList");
+
+container.innerHTML="";
+
+if(data.length === 0){
+
+container.innerHTML = "<p>No notifications</p>";
+return;
+
+}
+
+data.forEach(n=>{
+
+let newBadge = n.is_read == 0 
+? '<span class="new-badge">NEW</span>' 
+: '';
+
+let cardClass = n.is_read == 0 
+? "notification-card notification-new" 
+: "notification-card";
+
+container.innerHTML += `
+
+<div class="${cardClass}" onclick="openNotification('${n.link}',${n.id})">
+
+<div>
+
+${n.message}
+${newBadge}
+
+</div>
+
+<div class="notification-time">
+
+${new Date(n.created_at).toLocaleString()}
+
+</div>
+
+</div>
+
+`;
+
+});
+
+});
+
+}
+
+
+/* open notification */
+
+function openNotification(link,id){
+
+fetch(`/api/notifications/read/${id}`,{
+method:"POST"
+});
+
+window.location.href = link;
+
+}
+
+
+/* load page */
+
+loadNotifications();
+
+</script>
+
+</body>
+
+</html>

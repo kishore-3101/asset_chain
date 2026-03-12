@@ -22,7 +22,6 @@ margin:0;
 /* Sidebar */
 
 .sidebar{
-
 position:fixed;
 left:0;
 top:0;
@@ -31,7 +30,6 @@ height:100%;
 background:#111827;
 color:white;
 padding-top:20px;
-
 }
 
 .sidebar h4{
@@ -40,38 +38,42 @@ margin-bottom:30px;
 }
 
 .sidebar a{
-
 display:block;
 color:white;
 padding:12px 20px;
 text-decoration:none;
 transition:0.3s;
-
+position:relative;
 }
 
 .sidebar a:hover{
 background:#374151;
 }
 
-.logout{
+/* Notification badge */
+
+#notif_count{
+background:red;
+color:white;
+padding:2px 7px;
+border-radius:20px;
+font-size:11px;
 position:absolute;
-bottom:20px;
-width:100%;
+right:20px;
+top:10px;
+display:none;
 }
 
 /* Main content */
 
 .main{
-
 margin-left:230px;
 padding:40px;
-
 }
 
 /* Cards */
 
 .asset-card{
-
 border:none;
 border-radius:12px;
 padding:30px;
@@ -79,7 +81,6 @@ text-align:center;
 cursor:pointer;
 transition:0.3s;
 box-shadow:0 4px 15px rgba(0,0,0,0.1);
-
 }
 
 .asset-card:hover{
@@ -92,7 +93,13 @@ font-size:40px;
 margin-bottom:10px;
 }
 
-/*logout*/
+/* Logout */
+
+.logout{
+position:absolute;
+bottom:20px;
+width:100%;
+}
 
 .logout-btn{
 display:block;
@@ -130,6 +137,14 @@ background:#dc2626;
 <a href="#">Transport</a>
 
 <a href="#">Library Assets</a>
+
+<a href="#" onclick="openNotifications()">
+
+🔔 Notifications
+
+<span id="notif_count">0</span>
+
+</a>
 
 <div class="logout">
 <a href="#" class="logout-btn" onclick="logout()">Logout</a>
@@ -197,11 +212,11 @@ background:#dc2626;
 
 <script>
 
+/* Logout */
+
 function logout(){
 
-const confirmLogout = confirm("Are you sure you want to logout?");
-
-if(confirmLogout){
+if(confirm("Are you sure you want to logout?")){
 
 localStorage.removeItem("student");
 
@@ -210,11 +225,59 @@ window.location.href="login.html";
 }
 
 }
+
+
+/* Load Notification Badge */
+
+function loadNotifications(){
+
+const student = JSON.parse(localStorage.getItem("student"));
+
+if(!student) return;
+
+fetch(`/api/notifications/count/${student.id}/student`)
+.then(res=>res.json())
+.then(data=>{
+
+const badge = document.getElementById("notif_count");
+
+if(data.count > 0){
+
+badge.style.display = "inline";
+badge.innerText = data.count;
+
+}else{
+
+badge.style.display = "none";
+
+}
+
+});
+
+}
+
+
+/* Open Notifications Page */
+
+function openNotifications(){
+
+window.location.href="student_notifications.html";
+
+}
+
+
+/* Open Lab Equipment */
+
 function openLab(){
 
 window.location.href="student_equipment.html";
 
 }
+
+
+/* Load on Page Start */
+
+loadNotifications();
 
 </script>
 

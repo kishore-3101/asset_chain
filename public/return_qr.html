@@ -3,19 +3,18 @@
 
 <head>
 
-<title>Request QR</title>
+<title>Return QR</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 
 <style>
 
 body{
 font-family:'Poppins',sans-serif;
-background:#f4f6f9;
+background:#eef2f7;
 margin:0;
 }
 
@@ -27,7 +26,7 @@ left:0;
 top:0;
 width:230px;
 height:100%;
-background:#111827;
+background:#0f172a;
 color:white;
 padding-top:20px;
 }
@@ -42,12 +41,13 @@ display:block;
 color:white;
 padding:12px 20px;
 text-decoration:none;
-transition:0.3s;
 }
 
 .sidebar a:hover{
-background:#374151;
+background:#1e293b;
 }
+
+/* Logout */
 
 .logout{
 position:absolute;
@@ -64,11 +64,6 @@ background:#ef4444;
 color:white;
 border-radius:8px;
 text-decoration:none;
-font-weight:500;
-}
-
-.logout-btn:hover{
-background:#dc2626;
 }
 
 /* Main */
@@ -76,51 +71,33 @@ background:#dc2626;
 .main{
 margin-left:230px;
 padding:40px;
-display:flex;
-justify-content:center;
-align-items:center;
-height:100vh;
 }
 
 /* QR Card */
 
 .qr-card{
 background:white;
-padding:40px;
 border-radius:14px;
+padding:40px;
 text-align:center;
-box-shadow:0 8px 25px rgba(0,0,0,0.12);
-max-width:420px;
-width:100%;
+box-shadow:0 6px 18px rgba(0,0,0,0.08);
+max-width:500px;
+margin:auto;
 }
 
-.qr-card h2{
-font-weight:600;
-margin-bottom:10px;
-}
-
-.qr-card p{
-color:#6b7280;
-}
-
-.qr-image{
-margin-top:20px;
-padding:15px;
-background:#f9fafb;
+.qr-card img{
+border:10px solid #f1f5f9;
 border-radius:12px;
-display:inline-block;
 }
 
-.qr-image img{
-width:260px;
+.qr-title{
+font-weight:600;
+margin-bottom:20px;
 }
 
-/* Button */
-
-.btn-back{
-margin-top:25px;
-padding:10px 25px;
-border-radius:8px;
+.qr-note{
+color:#6b7280;
+margin-top:15px;
 }
 
 </style>
@@ -137,9 +114,8 @@ border-radius:8px;
 
 <a href="student_dashboard.html">Dashboard</a>
 <a href="student_equipment.html">Lab Equipment</a>
-<a href="#">Transport</a>
-<a href="#">Library Assets</a>
-<a href="student_notifications.html">Notifications</a>
+<a href="cart.html">Cart</a>
+<a href="previous_requests.html">My Requests</a>
 
 <div class="logout">
 <a href="#" class="logout-btn" onclick="logout()">Logout</a>
@@ -148,25 +124,29 @@ border-radius:8px;
 </div>
 
 
-<!-- Main -->
+<!-- Main Content -->
 
 <div class="main">
 
-<div class="qr-card">
+<div class="d-flex justify-content-between align-items-center mb-4">
 
-<h2>Your Equipment Request QR</h2>
+<h2 class="fw-bold">Return Equipment</h2>
 
-<p>Show this QR code to the Lab Incharge to collect your equipment.</p>
+<button class="btn btn-secondary" onclick="goBack()">
+← Back
+</button>
 
-<div class="qr-image">
-<img id="qrImage">
 </div>
 
-<br>
+<div class="qr-card">
 
-<button class="btn btn-primary btn-back" onclick="goBack()">
-Back to Dashboard
-</button>
+<h4 class="qr-title">Return QR Code</h4>
+
+<img id="qrImage" width="280">
+
+<p class="qr-note">
+Show this QR to the lab incharge while returning equipment
+</p>
 
 </div>
 
@@ -175,40 +155,47 @@ Back to Dashboard
 
 <script>
 
-const params = new URLSearchParams(window.location.search);
-const requestId = params.get("id");
-
-/* Load QR */
-
-fetch(`/api/student/request-qr/${requestId}`)
-.then(res=>res.json())
-.then(data=>{
-
-if(!data.success){
-alert("QR not found");
-return;
-}
-
-document.getElementById("qrImage").src = data.qr;
-
-});
-
-/* Back */
-
-function goBack(){
-window.location.href="student_dashboard.html";
-}
-
 /* Logout */
 
 function logout(){
 
-if(confirm("Logout?")){
-localStorage.removeItem("student");
+if(confirm("Are you sure you want to logout?")){
+localStorage.clear();
 window.location.href="login.html";
 }
 
 }
+
+/* Back */
+
+function goBack(){
+window.history.back();
+}
+
+/* Load Return QR */
+
+const params = new URLSearchParams(window.location.search);
+const requestId = params.get("id");
+
+fetch(`/api/student/return-qr/${requestId}`)
+.then(res=>res.json())
+.then(data=>{
+
+if(!data.success){
+
+alert(data.message || "Return QR not available yet");
+window.history.back();
+return;
+
+}
+
+document.getElementById("qrImage").src = data.return_qr;
+
+})
+.catch(err=>{
+console.error(err);
+alert("Server error");
+});
 
 </script>
 

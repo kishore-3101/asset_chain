@@ -11,8 +11,6 @@ router.post("/submit-request", (req, res) => {
 
 const { student_id, lab_id, items } = req.body;
 
-/* Create request */
-
 const sql = `
 INSERT INTO borrow_requests (student_id, lab_id)
 VALUES (?,?)
@@ -26,8 +24,6 @@ return res.status(500).json({ success:false });
 }
 
 const requestId = result.insertId;
-
-/* Insert requested equipment */
 
 const itemSql = `
 INSERT INTO request_items (request_id,equipment_id,quantity)
@@ -49,20 +45,14 @@ return res.status(500).json({ success:false });
 
 try {
 
-/* Generate QR for pickup */
-
 const qrData = `http://localhost:3000/incharge/request/${requestId}`;
 
 const qrImage = await QRCode.toDataURL(qrData);
-
-/* Save QR */
 
 db.query(
 `UPDATE borrow_requests SET qr_code=? WHERE id=?`,
 [qrImage, requestId]
 );
-
-/* Send response */
 
 res.json({
 success:true,
@@ -89,29 +79,19 @@ message:"QR generation failed"
 
 
 /* =====================================================
-   GET QR AGAIN (Student reopen QR)
+   GET PICKUP QR
 ===================================================== */
 
 router.get("/request-qr/:id",(req,res)=>{
 
 const requestId = req.params.id;
 
-const sql = `
-SELECT qr_code, status
-FROM borrow_requests
-WHERE id=?
-`;
+db.query(
+`SELECT qr_code, status FROM borrow_requests WHERE id=?`,
+[requestId],
+(err,result)=>{
 
-db.query(sql,[requestId],(err,result)=>{
-
-if(err){
-console.log(err);
-return res.status(500).json({success:false});
-}
-
-if(result.length === 0){
-return res.json({success:false});
-}
+if(err) return res.status(500).json({success:false});
 
 res.json({
 success:true,
@@ -125,7 +105,7 @@ status: result[0].status
 
 
 /* =====================================================
-   GET ALL STUDENT REQUESTS
+   GET STUDENT REQUEST HISTORY
 ===================================================== */
 
 router.get("/my-requests/:studentId",(req,res)=>{
@@ -133,10 +113,15 @@ router.get("/my-requests/:studentId",(req,res)=>{
 const studentId = req.params.studentId;
 
 const sql = `
-SELECT id, status, created_at
+SELECT 
+borrow_requests.id,
+borrow_requests.status,
+borrow_requests.created_at,
+labs.lab_name
 FROM borrow_requests
-WHERE student_id=?
-ORDER BY created_at DESC
+JOIN labs ON borrow_requests.lab_id = labs.id
+WHERE borrow_requests.student_id=?
+ORDER BY borrow_requests.created_at DESC
 `;
 
 db.query(sql,[studentId],(err,result)=>{
@@ -155,5 +140,151 @@ requests: result
 
 });
 
+
+/* =====================================================
+   GET REQUEST DETAILS
+===================================================== */
+
+router.get("/request-details/:id",(req,res)=>{
+
+const requestId = req.params.id;
+
+const sql = `
+SELECT equipment.equipment_name, request_items.quantity
+FROM request_items
+JOIN equipment
+ON request_items.equipment_id = equipment.id
+WHERE request_items.request_id=?
+`;
+
+db.query(sql,[requestId],(err,result)=>{
+
+if(err){
+console.log(err);
+return res.status(500).json({success:false});
+}
+
+res.json({
+success:true,
+items: result
+});
+
+});
+
+});
+
+
+/* =====================================================
+   GET BORROWED DETAILS
+===================================================== */
+
+router.get("/borrowed-details/:id",(req,res)=>{
+
+const requestId = req.params.id;
+
+const sql = `
+SELECT equipment.equipment_name, request_items.issued_quantity
+FROM request_items
+JOIN equipment
+ON request_items.equipment_id = equipment.id
+WHERE request_items.request_id=? AND request_items.issued_quantity > 0
+`;
+
+db.query(sql,[requestId],(err,result)=>{
+
+if(err){
+console.log(err);
+return res.status(500).json({success:false});
+}
+
+res.json({
+success:true,
+items: result
+});
+
+});
+
+});
+
+
+/* =====================================================
+   GET RETURN QR
+===================================================== */
+
+router.get("/return-qr/:id",(req,res)=>{
+
+const requestId = req.params.id;
+
+db.query(
+`SELECT return_qr,status FROM borrow_requests WHERE id=?`,
+[requestId],
+(err,result)=>{
+
+if(err) return res.status(500).json({success:false});
+
+if(result[0].status!=="approved"){
+return res.json({
+success:false,
+message:"Return QR not available yet"
+});
+}
+
+res.json({
+success:true,
+return_qr: result[0].return_qr
+});
+
+});
+
+});
+
+//penalty route
+
+/*
+========================================================
+GET STUDENT PENALTIES
+========================================================
+*/
+
+router.get("/penalties/:studentId",(req,res)=>{
+
+const studentId = req.params.studentId;
+
+const sql = `
+SELECT 
+penalties.id,
+penalties.penalty_amount,
+penalties.status,
+equipment.equipment_name,
+borrow_requests.id AS request_id
+
+FROM penalties
+
+JOIN equipment 
+ON penalties.equipment_id = equipment.id
+
+JOIN borrow_requests
+ON penalties.request_id = borrow_requests.id
+
+WHERE penalties.student_id = ?
+
+ORDER BY penalties.id DESC
+`;
+
+db.query(sql,[studentId],(err,result)=>{
+
+if(err){
+console.log(err);
+return res.status(500).json({success:false});
+}
+
+res.json({
+success:true,
+penalties: result
+});
+
+});
+
+});
 
 module.exports = router;

@@ -18,8 +18,6 @@ background:#eef2f7;
 margin:0;
 }
 
-/* Sidebar */
-
 .sidebar{
 position:fixed;
 left:0;
@@ -47,8 +45,6 @@ text-decoration:none;
 background:#1e293b;
 }
 
-/* Logout */
-
 .logout{
 position:absolute;
 bottom:20px;
@@ -66,31 +62,19 @@ border-radius:8px;
 text-decoration:none;
 }
 
-/* Main */
-
 .main{
 margin-left:230px;
 padding:40px;
 }
-
-/* Cards */
 
 .card{
 border-radius:12px;
 box-shadow:0 6px 18px rgba(0,0,0,0.08);
 }
 
-/* Table */
-
-.table th{
-vertical-align:middle;
-}
-
 .qty-input{
 width:90px;
 }
-
-/* Button */
 
 .issue-btn{
 background:linear-gradient(135deg,#22c55e,#16a34a);
@@ -105,13 +89,17 @@ font-weight:500;
 opacity:0.9;
 }
 
+.status-box{
+margin-top:10px;
+font-weight:600;
+color:#16a34a;
+}
+
 </style>
 
 </head>
 
 <body>
-
-<!-- Sidebar -->
 
 <div class="sidebar">
 
@@ -128,8 +116,6 @@ opacity:0.9;
 </div>
 
 
-<!-- Main Content -->
-
 <div class="main">
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -143,8 +129,6 @@ opacity:0.9;
 </div>
 
 
-<!-- Student Info -->
-
 <div class="card p-4 mb-4">
 
 <h5 class="mb-3">Student Information</h5>
@@ -154,14 +138,14 @@ opacity:0.9;
 <p><b>Department:</b> <span id="dept"></span></p>
 <p><b>Contact:</b> <span id="contact"></span></p>
 
+<p id="statusBox" class="status-box"></p>
+
 </div>
 
 
-<!-- Equipment -->
-
 <div class="card p-4">
 
-<h5 class="mb-3">Requested Equipment</h5>
+<h5 class="mb-3">Equipment Details</h5>
 
 <div class="table-responsive">
 
@@ -172,7 +156,7 @@ opacity:0.9;
 <tr>
 <th>Equipment</th>
 <th>Requested</th>
-<th>Give Quantity</th>
+<th id="actionHeader">Give Quantity</th>
 </tr>
 
 </thead>
@@ -183,7 +167,7 @@ opacity:0.9;
 
 </div>
 
-<button class="issue-btn mt-3" onclick="confirmIssue()">
+<button id="issueBtn" class="issue-btn mt-3" onclick="confirmIssue()">
 Confirm Issue
 </button>
 
@@ -205,6 +189,7 @@ const params = new URLSearchParams(window.location.search);
 const requestId = params.get("id");
 
 let requestItems=[];
+let requestStatus="";
 
 fetch(`/api/incharge/request/${requestId}`)
 .then(res=>res.json())
@@ -216,12 +201,12 @@ window.location.href="student_requests.html";
 return;
 }
 
+requestStatus = data.student.status;
+
 document.getElementById("name").innerText=data.student.name;
 document.getElementById("email").innerText=data.student.email;
 document.getElementById("dept").innerText=data.student.department;
 document.getElementById("contact").innerText=data.student.contact_number;
-
-const status = data.student.status;
 
 const table=document.getElementById("itemsTable");
 table.innerHTML="";
@@ -230,38 +215,57 @@ data.items.forEach((item,index)=>{
 
 requestItems.push(item);
 
+if(requestStatus === "pending"){
+
 table.innerHTML+=`
-
 <tr>
-
 <td>${item.equipment_name}</td>
 <td>${item.quantity}</td>
-
 <td>
-
 <input type="number"
 min="0"
 max="${item.quantity}"
-value="${item.issued_quantity || 0}"
+value="0"
 class="form-control qty-input"
-id="give-${index}"
-${status==="approved" ? "disabled":""}
->
-
+id="give-${index}">
 </td>
-
 </tr>
-
 `;
+
+}
+
+else{
+
+table.innerHTML+=`
+<tr>
+<td>${item.equipment_name}</td>
+<td>${item.quantity}</td>
+<td>${item.issued_quantity || 0}</td>
+</tr>
+`;
+
+}
 
 });
 
-/* disable issue button if already approved */
+const statusBox=document.getElementById("statusBox");
+const issueBtn=document.getElementById("issueBtn");
+const header=document.getElementById("actionHeader");
 
-if(status==="approved"){
-const btn=document.querySelector(".issue-btn");
-btn.disabled=true;
-btn.innerText="Already Issued";
+if(requestStatus==="approved"){
+
+header.innerText="Issued Quantity";
+issueBtn.style.display="none";
+statusBox.innerText="Status: Equipment Issued";
+
+}
+
+if(requestStatus==="returned"){
+
+header.innerText="Issued Quantity";
+issueBtn.style.display="none";
+statusBox.innerText="Status: Equipment Returned";
+
 }
 
 });
@@ -272,9 +276,15 @@ function confirmIssue(){
 const issued=[];
 let totalIssued=0;
 
-requestItems.forEach((item,index)=>{
+for(let i=0;i<requestItems.length;i++){
 
-const qty=parseInt(document.getElementById(`give-${index}`).value) || 0;
+const item=requestItems[i];
+const qty=parseInt(document.getElementById(`give-${i}`).value)||0;
+
+if(qty > item.quantity){
+alert("Cannot issue more than requested quantity");
+return;
+}
 
 totalIssued+=qty;
 
@@ -283,7 +293,7 @@ equipment_id:item.equipment_id,
 issued_quantity:qty
 });
 
-});
+}
 
 if(totalIssued===0){
 alert("Please enter quantity to issue");

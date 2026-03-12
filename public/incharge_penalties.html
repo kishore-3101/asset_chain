@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Penalty Collection</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+
+body{
+font-family:'Poppins',sans-serif;
+margin:0;
+background:#9ba2a9;
+display:flex;
+min-height:100vh;
+}
+
+.sidebar{
+width:240px;
+background:#1e293b;
+color:white;
+padding:25px 20px;
+position:fixed;
+height:100%;
+}
+
+.sidebar h3{
+text-align:center;
+margin-bottom:30px;
+font-weight:600;
+}
+
+.menu-item{
+padding:12px;
+margin-bottom:10px;
+border-radius:8px;
+cursor:pointer;
+transition:0.3s;
+}
+
+.menu-item:hover{
+background:#334155;
+}
+
+.logout{
+background:#ef4444;
+text-align:center;
+}
+
+.logout:hover{
+background:#dc2626;
+}
+
+.main{
+margin-left:260px;
+padding:30px;
+width:100%;
+background:#dddddd;
+min-height:100vh;
+}
+
+.main h2{
+font-weight:600;
+color:#1e293b;
+}
+
+.penalty-card{
+background:white;
+padding:25px;
+border-radius:12px;
+box-shadow:0 6px 15px rgba(0,0,0,0.1);
+}
+
+.btn-received{
+background:#16a34a;
+border:none;
+}
+
+.btn-received:hover{
+background:#15803d;
+}
+
+#assetchain{
+color:#008cff;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="sidebar">
+
+<h3 id="assetchain"><b>Asset Chain</b></h3>
+
+<div class="menu-item" onclick="goDashboard()">Dashboard</div>
+<div class="menu-item" onclick="openAddEquipment()">Add Equipment</div>
+<div class="menu-item" onclick="openViewEquipment()">View Equipment</div>
+<div class="menu-item" onclick="openStudentRequests()">Student Requests</div>
+<div class="menu-item" onclick="openBorrowed()">Borrowed Items</div>
+<div class="menu-item">Penalty Collection</div>
+
+<div class="menu-item logout" onclick="logout()">Logout</div>
+
+</div>
+
+<div class="main">
+
+<h2>Penalty Collection</h2>
+
+<div class="penalty-card mt-4">
+
+<table class="table">
+
+<thead class="table-dark">
+
+<tr>
+<th>Student</th>
+<th>Equipment</th>
+<th>Penalty Amount</th>
+<th>Status</th>
+<th>Action</th>
+</tr>
+
+</thead>
+
+<tbody id="penaltyTable"></tbody>
+
+</table>
+
+</div>
+
+</div>
+
+
+<script>
+
+/* LOAD PENALTIES */
+
+function loadPenalties(){
+
+const inchargeId = localStorage.getItem("user_id");
+
+fetch(`/api/incharge/penalties/${inchargeId}`)
+
+.then(res=>res.json())
+
+.then(data=>{
+
+const table=document.getElementById("penaltyTable");
+
+table.innerHTML="";
+
+if(!data.success || data.penalties.length===0){
+
+table.innerHTML=`
+<tr>
+<td colspan="5" class="text-center">No penalties found</td>
+</tr>
+`;
+
+return;
+
+}
+
+data.penalties.forEach(p=>{
+
+let badge = p.status === "pending"
+? '<span class="badge bg-danger">Pending</span>'
+: '<span class="badge bg-success">Received</span>';
+
+let action = p.status === "pending"
+? `<button class="btn btn-received btn-sm text-white"
+onclick="receivePenalty(${p.id})">
+Penalty Received
+</button>`
+: `<span class="text-success fw-bold">Received</span>`;
+
+table.innerHTML += `
+<tr>
+<td>${p.student_name}</td>
+<td>${p.equipment_name}</td>
+<td>₹${p.penalty_amount}</td>
+<td>${badge}</td>
+<td>${action}</td>
+</tr>
+`;
+
+});
+
+});
+
+}
+
+
+/* MARK PENALTY RECEIVED */
+
+function receivePenalty(id){
+
+if(!confirm("Confirm penalty received?")) return;
+
+fetch("/api/incharge/penalty-paid",{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify({
+penalty_id:id
+})
+
+})
+.then(res=>res.json())
+.then(data=>{
+
+alert("Penalty marked as received");
+
+loadPenalties();
+
+});
+
+}
+
+
+/* NAVIGATION */
+
+function goDashboard(){
+window.location.href="incharge_dashboard.html";
+}
+
+function logout(){
+localStorage.clear();
+window.location.href="login.html";
+}
+
+
+/* LOAD DATA */
+
+loadPenalties();
+
+</script>
+
+</body>
+</html>
